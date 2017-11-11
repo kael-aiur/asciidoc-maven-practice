@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>kael.demo</groupId>
+    <artifactId>bingo-paas-ask-asciidoc</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
+        <asciidoctorj.version>1.5.3.2</asciidoctorj.version>
+        <asciidoctorj.diagram.version>1.5.4.1</asciidoctorj.diagram.version>
+        <jruby.version>1.7.26</jruby.version>
+
+        <asciidoctor.maven.plugin.version>1.5.2.1</asciidoctor.maven.plugin.version>
+        <asciidoctorj.pdf.version>1.5.0-alpha.10.1</asciidoctorj.pdf.version>
+    </properties>
+    <build>
+        <!-- 默认命令，配置后可以直接使用mvn编译 -->
+        <defaultGoal>process-resources</defaultGoal>
+        <!--
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <targetPath>${project.build.directory}/book</targetPath>
+            </resource>
+        </resources>
+        -->
+        <plugins>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${asciidoctor.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>output-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <imagesDir>${project.basedir}/src/main/resources/images</imagesDir>
+                            <outputDirectory>${project.build.directory}/book</outputDirectory>
+                            <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <sourceHighlighter>prettify</sourceHighlighter>
+                            <backend>html</backend>
+                            <preserveDirectories>false</preserveDirectories>
+                            <requires>
+                                <require>asciidoctor-diagram</require>
+                            </requires>
+                            <attributes>
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <sectanchors>true</sectanchors>
+                                <!-- set the idprefix to blank -->
+                                <idprefix/>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>output-pdf</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/pdf</outputDirectory>
+                            <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <sourceHighlighter>prettify</sourceHighlighter>
+                            <backend>pdf</backend>
+                            <preserveDirectories>false</preserveDirectories>
+                            <requires>
+                                <require>asciidoctor-diagram</require>
+                                <require>asciidoctor-pdf</require>
+                            </requires>
+                            <attributes>
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <sectanchors>true</sectanchors>
+                                <pdf-style>${project.basedir}/src/main/resources/themes/KaiGenGothicCN</pdf-style>
+                                <pdf-fontsdir>${project.basedir}/src/main/resources/fonts</pdf-fontsdir>
+                                <!-- set the idprefix to blank -->
+                                <idprefix/>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <!-- Comment this section to use the default jruby artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                    <!-- Comment this section to use the default AsciidoctorJ artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${asciidoctorj.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${asciidoctorj.diagram.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-pdf</artifactId>
+                        <version>${asciidoctorj.pdf.version}</version>
+                    </dependency>
+                </dependencies>
+                
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

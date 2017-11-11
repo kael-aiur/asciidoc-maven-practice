@@ -1,0 +1,141 @@
+ifndef::imagesdir[:imagesdir: ../../resources/images]
+[#version]
+== 版本变更
+
+各版本下载地址：
+
+* http://10.201.78.161:9097/deploy_download/apigw-deploy-v1.4_0823.zip[V1.4:apigw-deploy-v1.4_0823.zip]
+* http://10.201.78.161:9097/deploy_download/apigw_deploy-v1.5_1013.zip[V1.5:apigw_deploy-v1.5_1013.zip]
+
+[#v1_5]
+=== V1.5变更
+
+==== 变更总览
+
+* API网关
+** 修改版本号为0.6.0-SNAPSHOT
+** 内置API注册方式变化：从xml配置改为json配置
+* 控制台
+** 新功能
+*** 服务订阅
+*** 监控API节点
+*** 用户API统计分析
+*** API列表头筛选和排序操作
+** 标签管理
+*** 上架和下架API增加审批流程
+*** API列表增加所属分类和标签字段
+*** API增加所属部门和责任人字段
+*** 应用增加所属警种和所属地市字段
+*** 控制台菜单重组
+** 问题修复
+*** 我的API：取消API所属群组无效
+*** 控制台预览文档时，如果api的主键含有$符号会被uri编码导致看不到文档
+*** 我的应用》已申请API，权限全部显示成已删除（测试环境）
+*** 我的群组：列表中，群组名称鼠标为可点击状态，点击却没有反应
+*** 网关：设置API的接口需要客户端校验后，携带未授权的应用请求网关，返回403
+*** API》调用日志：当API调用500错误时，网关返回状态为unknown
+*** API》发布部署：已下线的分组不应该允许被选中，被发布
+*** WebServicesAPI：WSDL地址校验问题
+*** API》发布部署：重复添加多个同名的服务器名称，没有做校验
+*** 我的API》添加部署,添加多个服务器，同名服务器也可以添加成功。
+*** 添加|编辑接口和添加操作中，描述要求长度<=255，但目前未做控制。
+*** 网关组》创建网关组，在页面中填写正确的必填信息后，确定按钮置灰，无法创建成功。
+*** API：系统设置》所有API，未实现列表排序，过滤条件（与我的API保持一致）
+*** 我的群组：搜索添加成员时，确定后经常不是自己选定的成员
+*** API门户：服务目录界面的搜索功能无效
+*** 注销：同一个浏览器新开2个TAB页，都是登录状态，注销其中一个，另外一个TAB还是登录状态
+*** 表头排序功能：点击某表头排序之后，点击分页，排序没有安刚才的规则显示，拿取的数据也不正确
+*** 标签管理：创建标签时，表单验证问题
+*** API：我的API，列表头和内容错位
+*** API：列表头搜索结果不正确
+*** 统计功能：单统计API没有相关数据时，也应该显示
+*** 系统设置》所有API，按状态查询结果错误
+*** 审批管理：申请列表|已办审批中，上下架申请单明细显示异常
+*** API门户：服务目录界面的搜索功能优化
+*** 订阅管理：添加订阅分类，多个显示问题需优化
+*** 日志调用链显示问题
+*** 审批管理：查看已被删除API的申请单明细，报错
+*** 我的应用：邮箱未做格式校验
+
+==== 主要影响
+
+===== API网关
+
+* 版本号修改为0.6.0b-SNAPSHOT，影响：
+
+** conf/wrapper.conf中配置的agent.jar需要修改成对应的版本号
+
+image::version/index_01.png[]
+
+* 内置API的注册方式发生变化，影响：
+
+** conf目前下创建registry文件夹
+** 原conf/config/registry.xml中定义的API所在的zone和group信息，迁移到conf/server.xml文件，定义方式如下 ：
+
+[source, xml]
+....
+<server ....>
+  <!-- 当前网关所在zone和group信息 -->
+  <registry zone="default" group="console" /> //<1>
+
+  <http ...>
+  </http>
+</server>
+....
+
+<1> 配置默认注册API的区域和分组
+
+** 如果原conf/config/registry.xml中有内置API的定义，每个API拆成一个json文件，放到conf/registry目录，API的定义与redis中数据格式一致（可通过控制台发布生成），其中常用内置的几个api定义如下：
+*** console的定义：
+
+[source,json]
+....
+{
+  "pathPrefixes": [
+      "/console"
+  ],
+  "name": "console",
+  "basePath": "/console",
+  "authMode": "none",
+  "defaultAuthType": "oauth2",
+  "authTypes": {
+      "oauth2": ""
+    },
+  "permissions": [],
+  "servers": [{
+      "host": "127.0.0.1",
+      "port": 9090,
+      "secured": false
+  }]
+}
+....
+*** sso定义
+
+[source,json]
+....
+{
+  "pathPrefixes": [
+      "/sso"
+  ],
+  "name": "sso",
+  "basePath": "/sso",
+  "authMode": "none",
+  "defaultAuthType": "oauth2",
+  "authTypes": {
+      "oauth2": ""
+    },
+  "permissions": [],
+  "servers": [{
+      "host": "127.0.0.1",
+      "port": 9090,
+      "secured": false
+  }]
+}
+....
+
+===== 控制台
+
+* 增加了数据库字段和订阅表，需要执行更新脚本``update_v1.5.sql``。
+
+* 修复应用申请API权限后，网关只清除该应用部分的At缓存，导致应用调用API时，可能会出现权限未生效的问题
+* 修复logagent可能会导致CPU一直很高的问题，由于WeekHashMap是非线程安全，并发场景下，可能会出现偶发性的死循环

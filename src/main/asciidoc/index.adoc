@@ -1,0 +1,15 @@
+PAAS平台部署说明及常见问答
+================
+彭鸿杰 <penghj@bingosoft.net>
+v2, 2017-11-02
+:source-highlighter: prettify
+:data-uri:
+ifndef::imagesdir[:imagesdir: ../resources/images]
+
+本文用于说明PAAS平台在部署运维的过程的中场景问题以及各个版本的更新步骤和功能说明，仅对内使用，不对外开放。
+
+include::deploy/index.adoc[]
+
+include::ask/index.adoc[]
+
+include::version/index.adoc[]

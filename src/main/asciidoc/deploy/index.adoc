@@ -1,0 +1,190 @@
+ifndef::imagesdir[:imagesdir: ../../resources/images]
+== 部署配置
+
+=== V1.4升级V1.5
+
+版本更新内容参考<<v1_5,v1.5更新>>
+
+==== 更新准备
+
+===== 一、下载安装包
+
+从公司内网的更新包服务器上下载更新包，下载地址参考<<version,版本变更>>
+ 
+
+image::deploy/1.4to1.5_1.png[]
+
+===== 二、修改配置
+
+修改根目录下的配置文件 `config-settings.sh` :
+
+[source,bash]
+....
+# 注意值中不能包含#号
+declare -A settings
+#数据库地址
+settings['db_url']='10.201.77.61:3306'
+settings['db_user']='root'
+settings['db_pwd']='Link$2013'
+#SSO外部地址
+settings['sso_url']='https://10.201.78.36:9443/ssov3'
+#SSO内部地址
+settings['sso_in']='http://10.201.78.36:9095/ssov3'
+#SSO信任的回调地址，改成平台的根地址，不带/结尾
+settings['sso_trust_redirect_uri']='https://developer.bingosoft.net:12100'
+#Redis
+settings['redis_ip']='10.201.78.36'
+settings['redis_port']='6379'
+settings['redis_url']="${settings['redis_ip']}:${settings['redis_port']}"
+echo ${settings['redis_url']}
+#elastissearch地址
+settings['el_url']='10.201.78.36:9200'
+
+#部署路径
+settings['base_folder']=$(cd `dirname $0`/..; pwd)
+....
+
+===== 三、应用配置
+
+修改完成 `config-settings.sh` 的参数之后，需要将这些参数应用到各个服务中：
+
+* 应用基础网关和服务的配置
+
+[source, bash]
+....
+$> cd mamagement
+$> ./install.sh
+....
+
+* 应用服务网关的配置
+
+[source, bash]
+....
+$> cd runtime
+$> ./install.sh
+....
+
+NOTE: sh脚本需要在linux环境下执行
+
+以上两步执行完成之后，应用的配置会全部修改完成。
+
+===== 四、修改内置接口注册配置
+
+在基础网关启动的时候，我们需要把某些API自动注册到基础网关上（如：控制台的API）。
+
+这种需求可以在 `management/apigw/conf/registry` 下增加json配置文件实现，我们的安装包中已经内置了 `console.json` 的配置，但是需要修改。
+
+.console.json
+[source,json]
+....
+{
+    "pathPrefixes": [
+        "/console"
+    ],
+    "name": "console",
+    "basePath": "/console",
+    "enableCORS": true,
+    "servers": [
+      {
+        "host": "127.0.0.1",
+        "port": 9095,
+        "secured": false
+      }
+    ],
+"authMode": "none",
+  "defaultAuthType": "oauth2",
+  "authTypes": {
+    "oauth2": ""
+  },
+  "permissions": []
+}
+....
+
+这里修改 `services` 属性，指向真正的控制台服务地址即可。
+
+[%autowidth]
+|====
+|属性|说明
+|host|ip地址
+|port|端口
+|secured|是否使用https
+|====
+
+NOTE: 这里配置的console服务器地址指的是网关访问的的console服务地址，不是对外访问的地址。 servers是一个数组对象，因此可以配置多个console的服务地址，作为console的负载均衡。
+
+===== 五、修改用户组织表表名
+
+NOTE: 本节配置不是必须修改的，请按实际情况判断
+
+在 `management\tomcat8\webapps\console\WEB-INF\classes\conf\config\config.xml` 中，有如下配置:
+
+[source,xml]
+....
+<if expr="properties['user.model.override'] != true">
+    <orm:models datasource="user">
+        <orm:class name="net.bingosoft.console.common.core.model.User"/>
+        <orm:class name="net.bingosoft.console.common.core.model.Organization"/>
+        <orm:class name="net.bingosoft.console.common.core.model.UserOrg"/>
+    </orm:models>
+</if>
+....
+
+这里配置的是用户(User)，组织(Orangization)和用户组织(UserOrg)的关系表对应的数据源，默认对应的数据库表分别是：
+
+* User -> uam_user
+* Organization -> uam_organization
+* UserOrg -> uam_user_org
+
+如果需要修改对应表名的话，请按照如下配置：
+
+[source,xml]
+....
+<if expr="properties['user.model.override'] != true">
+    <orm:models datasource="user">
+        <orm:class name="net.bingosoft.console.common.core.model.User" table="uam_user"/>
+        <orm:class name="net.bingosoft.console.common.core.model.Organization" table="uam_org"/>
+        <orm:class name="net.bingosoft.console.common.core.model.UserOrg" table="uam_user_org"/>
+    </orm:models>
+</if>
+....
+
+===== 六、拷贝安装包
+
+按照需要从一下目录中拷贝程序包：
+
+* 服务网关： `runtime\apigw`
+* 基础网关： `management/apigw`
+* 控制台服务：`management\tomcat8\webapps\console`
+* 单点登录服务： `management\tomcat8\webapps\ssov3`
+* 控制台前端： `management\tomcat8\webapps\ROOT`
+* SDK代码生成服务： `management\tomcat8\webapps\codegen`
+
+===== 开始更新
+
+===== 一、更新数据库
+
+执行 `dbscript/update_v1.4_to_v1.5.sql` 的更新脚本，更新数据库结构。
+
+===== 二、升级API网关
+
+NOTE: API网关包含服务网关和基础网关。
+
+1. 停止网关服务
+2. 备份旧的网关程序包
+3. 删除旧的网关程序包
+4. 更新新的网关程序包
+5. 启动网关服务
+
+TIP: 如果有多个节点请逐个更新
+
+===== 三、更新统一认证服务(SSO)
+
+1. 停止SSO的tomcat服务
+2. 备份旧的SSO程序包
+3. 删除旧的SSO程序包
+4. 更新新的SSO程序包
+5. 启动SSO的tomcat服务
+
+TIP: 如果有多个节点请逐个更新
+
+=== 网关本身负载多节点

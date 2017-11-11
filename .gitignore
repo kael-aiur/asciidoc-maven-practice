@@ -1,3 +1,17 @@
+
+### idea_eclipse template
+# maven
+target/
+
+#intellij idea
+*.iml
+.idea
+
+# eclipse
+.settings
+.project
+.classpath
+
 # Compiled class file
 *.class
 
